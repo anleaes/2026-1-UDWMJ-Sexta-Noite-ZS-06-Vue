@@ -19,11 +19,16 @@ const router = createRouter({
       path: '/cadastro',
       name: 'cadastro',
       component: () => import('../views/CadastroView.vue')
+    },
+    {
+      path: '/desenvolvedores',
+      name: 'desenvolvedores',
+      component: () => import('../views/DeveloperView.vue'),
+      meta: { requiresAuth: true } // Exige login para acessar
     }
   ]
 });
 
-// Guardião de navegação para impedir acesso sem login
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore();
   

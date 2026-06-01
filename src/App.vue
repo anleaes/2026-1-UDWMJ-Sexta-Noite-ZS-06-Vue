@@ -14,7 +14,9 @@ async function handleLogout() {
 <template>
   <header v-if="authStore.isAuthenticated" class="navbar">
     <div class="logo">Catálogo de Jogos</div>
-    <nav>
+    <nav class="nav-links">
+      <RouterLink to="/" class="nav-item">Início</RouterLink>
+      <RouterLink to="/desenvolvedores" class="nav-item">Desenvolvedores</RouterLink>
       <button @click="handleLogout" class="btn-logout">Sair</button>
     </nav>
   </header>
@@ -35,6 +37,19 @@ body { margin: 0; font-family: Arial, sans-serif; }
   padding: 10px 20px;
 }
 .logo { font-weight: bold; font-size: 18px; }
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+.nav-item {
+  color: white;
+  text-decoration: none;
+  font-size: 15px;
+}
+.nav-item:hover {
+  text-decoration: underline;
+}
 .btn-logout {
   background-color: #ff4d4d;
   color: white;

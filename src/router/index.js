@@ -24,7 +24,14 @@ const router = createRouter({
       path: '/desenvolvedores',
       name: 'desenvolvedores',
       component: () => import('../views/DeveloperView.vue'),
-      meta: { requiresAuth: true } // Exige login para acessar
+      meta: { requiresAuth: true }
+    },
+    // Adicione esta nova rota:
+    {
+      path: '/consoles',
+      name: 'consoles',
+      component: () => import('../views/ConsoleView.vue'),
+      meta: { requiresAuth: true }
     }
   ]
 });

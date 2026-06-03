@@ -17,7 +17,7 @@ const formData = ref({
 // Busca a lista de desenvolvedores do Django
 async function fetchDevelopers() {
   try {
-    const response = await api.get('/developer/developer/');
+    const response = await api.get('/developer/');
     developers.value = response.data;
   } catch (error) {
     console.error('Erro ao buscar desenvolvedores:', error);
@@ -30,7 +30,7 @@ async function handleCreateDeveloper() {
   errorMessage.value = '';
   successMessage.value = '';
   try {
-    await api.post('/developer/developer/', formData.value);
+    await api.post('/developer/', formData.value);
     successMessage.value = 'Desenvolvedor cadastrado com sucesso!';
     
     // Limpa o formulário

@@ -7,7 +7,7 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: () => import('../views/HomeView.vue'),
+      component: () => import('../views/GameView.vue'),
       meta: { requiresAuth: true }
     },
     {
@@ -26,13 +26,18 @@ const router = createRouter({
       component: () => import('../views/DeveloperView.vue'),
       meta: { requiresAuth: true }
     },
-    // Adicione esta nova rota:
     {
       path: '/consoles',
       name: 'consoles',
       component: () => import('../views/ConsoleView.vue'),
       meta: { requiresAuth: true }
-    }
+    },
+    {
+      path: '/generos',
+      name: 'generos',
+      component: () => import('../views/GenreView.vue'),
+      meta: { requiresAuth: true }
+    },
   ]
 });
 

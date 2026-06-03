@@ -2,76 +2,70 @@
 import { ref, onMounted } from 'vue';
 import api from '../services/api';
 
-const consoles = ref([]);
+const genres = ref([]);
 const errorMessage = ref('');
 const successMessage = ref('');
 
-// Dados do formulário de cadastro baseados no model Console do Django
+// Dados do formulário baseados no model Genre do Django
 const formData = ref({
   name: '',
-  manufacturer: '',
-  release_year: ''
+  description: ''
 });
 
-// Busca os consoles do Django
-async function fetchConsoles() {
+// Busca os gêneros do Django
+async function fetchGenres() {
   try {
-    const response = await api.get('/console/');
-    consoles.value = response.data;
+    const response = await api.get('/genre/');
+    genres.value = response.data;
   } catch (error) {
-    console.error('Erro ao buscar consoles:', error);
-    errorMessage.value = 'Não foi possível carregar a lista de consoles.';
+    console.error('Erro ao buscar gêneros:', error);
+    errorMessage.value = 'Não foi possível carregar a lista de gêneros.';
   }
 }
 
-// Envia o cadastro de um novo console para o Django
-async function handleCreateConsole() {
+// Cadastra um novo gênero
+async function handleCreateGenre() {
   errorMessage.value = '';
   successMessage.value = '';
   try {
-    await api.post('/console/', formData.value);
-    successMessage.value = 'Console cadastrado com sucesso!';
+    await api.post('/genre/', formData.value);
+    successMessage.value = 'Gênero cadastrado com sucesso!';
     
     // Limpa o formulário
-    formData.value = { name: '', manufacturer: '', release_year: '' };
+    formData.value = { name: '', description: '' };
     
-    // Atualiza a tabela na tela
-    fetchConsoles();
+    // Atualiza a listagem
+    fetchGenres();
   } catch (error) {
-    console.error('Erro ao cadastrar console:', error);
+    console.error('Erro ao cadastrar gênero:', error);
     errorMessage.value = error.response?.data 
       ? JSON.stringify(error.response.data) 
-      : 'Ocorreu um erro ao cadastrar o console.';
+      : 'Ocorreu um erro ao cadastrar o gênero.';
   }
 }
 
 onMounted(() => {
-  fetchConsoles();
+  fetchGenres();
 });
 </script>
 
 <template>
-  <div class="console-container">
-    <h2>Gerenciar Consoles</h2>
+  <div class="genre-container">
+    <h2>Gerenciar Gêneros</h2>
 
     <div class="content-layout">
       <!-- Formulário de Cadastro (Esquerda) -->
       <div class="form-section">
-        <h3>Cadastrar Console</h3>
-        <form @submit.prevent="handleCreateConsole" class="simple-form">
+        <h3>Cadastrar Gênero</h3>
+        <form @submit.prevent="handleCreateGenre" class="simple-form">
           <div class="form-group">
-            <label for="name">Nome do Console</label>
+            <label for="name">Nome do Gênero</label>
             <input v-model="formData.name" type="text" id="name" required />
           </div>
 
           <div class="form-group">
-            <label for="manufacturer">Fabricante</label>
-            <input v-model="formData.manufacturer" type="text" id="manufacturer" required />
-          </div>
-
-          <div class="form-group">
-            <label for="release_year">Ano de Lançamento</label>
-            <input v-model="formData.release_year" type="number" id="release_year" required />
+            <label for="description">Descrição</label>
+            <textarea v-model="formData.description" id="description" rows="4"></textarea>
           </div>
 
           <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
@@ -83,21 +77,19 @@ onMounted(() => {
 
       <!-- Tabela de Listagem (Direita) -->
       <div class="list-section">
-        <h3>Lista de Consoles</h3>
-        <p v-if="consoles.length === 0" class="no-data">Nenhum console cadastrado.</p>
+        <h3>Lista de Gêneros</h3>
+        <p v-if="genres.length === 0" class="no-data">Nenhum gênero cadastrado.</p>
         <table v-else class="simple-table">
           <thead>
             <tr>
               <th>Nome</th>
-              <th>Fabricante</th>
-              <th>Ano de Lançamento</th>
+              <th>Descrição</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="consoleItem in consoles" :key="consoleItem.id">
-              <td><strong>{{ consoleItem.name }}</strong></td>
-              <td>{{ consoleItem.manufacturer }}</td>
-              <td>{{ consoleItem.release_year }}</td>
+            <tr v-for="genre in genres" :key="genre.id">
+              <td><strong>{{ genre.name }}</strong></td>
+              <td>{{ genre.description || '-' }}</td>
             </tr>
           </tbody>
         </table>
@@ -107,7 +99,7 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.console-container {
+.genre-container {
   padding: 20px;
   font-family: Arial, sans-serif;
 }
@@ -142,7 +134,7 @@ onMounted(() => {
   margin-bottom: 4px;
   font-weight: bold;
 }
-.form-group input {
+.form-group input, .form-group textarea {
   padding: 8px;
   border: 1px solid #ccc;
   border-radius: 4px;

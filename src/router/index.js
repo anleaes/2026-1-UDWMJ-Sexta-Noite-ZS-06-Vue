@@ -50,6 +50,12 @@ const router = createRouter({
       component: () => import('../views/ProfileView.vue'),
       meta: { requiresAuth: true }
     },
+    {
+      path: '/tags',
+      name: 'tags',
+      component: () => import('../views/TagView.vue'),
+      meta: { requiresAuth: true }
+    }
   ]
 });
 

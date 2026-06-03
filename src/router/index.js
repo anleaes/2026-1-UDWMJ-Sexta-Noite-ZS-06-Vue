@@ -38,6 +38,12 @@ const router = createRouter({
       component: () => import('../views/GenreView.vue'),
       meta: { requiresAuth: true }
     },
+    {
+      path: '/reviews',
+      name: 'reviews',
+      component: () => import('../views/ReviewView.vue'),
+      meta: { requiresAuth: true }
+    },
   ]
 });
 

@@ -20,6 +20,7 @@ async function handleLogout() {
       <RouterLink to="/consoles" class="nav-item">Consoles</RouterLink>
       <RouterLink to="/generos" class="nav-item">Gêneros</RouterLink>
       <RouterLink to="/reviews" class="nav-item">Avaliações</RouterLink>
+      <RouterLink to="/perfil" class="nav-item">Meu Perfil</RouterLink>
       <button @click="handleLogout" class="btn-logout">Sair</button>
     </nav>
   </header>

@@ -10,25 +10,26 @@ const genres = ref([]);
 const errorMessage = ref('');
 const successMessage = ref('');
 
+// Controle do Modal de Cadastro
+const showModal = ref(false);
+
 // Dados do formulário
 const formData = ref({
   title: '',
   description: '',
   release_year: '',
-  developer: '',    // ID do Desenvolvedor selecionado
-  genre: [],        // Array de IDs de Gêneros selecionados (M2M)
-  consoles: []      // Array de IDs de Consoles selecionados (M2M)
+  developer: '',    
+  genre: [],        
+  consoles: []      
 });
 
 // Arquivo da imagem selecionada pelo usuário
 const selectedFile = ref(null);
 
-// Captura a seleção da imagem de capa
 function handleFileChange(event) {
   selectedFile.value = event.target.files[0];
 }
 
-// Busca todos os dados necessários do Django
 async function loadAllData() {
   try {
     const [gamesRes, devRes, consoleRes, genreRes] = await Promise.all([
@@ -48,7 +49,6 @@ async function loadAllData() {
   }
 }
 
-// Cadastra um novo jogo usando multipart/form-data (necessário para upload de arquivos)
 async function handleCreateGame() {
   errorMessage.value = '';
   successMessage.value = '';
@@ -60,12 +60,10 @@ async function handleCreateGame() {
     payload.append('release_year', formData.value.release_year);
     payload.append('developer', formData.value.developer);
 
-    // Envia o arquivo da capa se o usuário selecionou um
     if (selectedFile.value) {
       payload.append('cover_image', selectedFile.value);
     }
 
-    // Para campos ManyToMany (Gêneros e Consoles), adicionamos cada ID individualmente
     formData.value.genre.forEach(id => {
       payload.append('genre', id);
     });
@@ -79,17 +77,15 @@ async function handleCreateGame() {
       }
     });
 
-    successMessage.value = 'Jogo cadastrado com sucesso!';
-    
-    // Limpa o formulário
+    // Limpa o formulário e fecha o modal ao ter sucesso
     formData.value = { title: '', description: '', release_year: '', developer: '', genre: [], consoles: [] };
     selectedFile.value = null;
+    showModal.value = false; // <-- Fecha o modal!
     
-    // Limpa o campo de input file visualmente
-    const fileInput = document.getElementById('cover_image');
-    if (fileInput) fileInput.value = '';
+    // Alerta de sucesso nativo para confirmar pro usuário já que o modal fechou
+    alert('Jogo cadastrado com sucesso!');
 
-    // Recarrega a listagem de jogos
+    // Recarrega a listagem de jogos para mostrar o novo jogo
     loadAllData();
   } catch (error) {
     console.error('Erro ao cadastrar jogo:', error);
@@ -99,7 +95,6 @@ async function handleCreateGame() {
   }
 }
 
-// Auxiliares para exibir os nomes ao invés de IDs na listagem
 function getDeveloperName(id) {
   const dev = developers.value.find(d => d.id === id);
   return dev ? dev.name : '-';
@@ -128,53 +123,95 @@ onMounted(() => {
 
 <template>
   <div class="game-container">
-    <h2>Catálogo de Jogos</h2>
+    
+    <div class="header-row">
+      <h2>Catálogo de Jogos</h2>
+      <button class="add-game-btn" @click="showModal = true">
+        + Adicionar Novo Jogo
+      </button>
+    </div>
 
-    <div class="content-layout">
-      <div class="form-section">
-        <h3>Cadastrar Jogo</h3>
+    <div class="list-section">
+      <p v-if="games.length === 0" class="no-data">Nenhum jogo cadastrado.</p>
+      
+      <div v-else class="games-grid">
+        <router-link 
+          v-for="game in games" 
+          :key="game.id" 
+          :to="`/jogo/${game.id}`" 
+          class="game-card clickable-card"
+        >
+          <div class="card-image">
+            <img v-if="game.cover_image" :src="game.cover_image" alt="Capa do Jogo" />
+            <div v-else class="no-image">Sem Capa</div>
+          </div>
+          
+          <div class="card-details">
+            <h4>{{ game.title }} ({{ game.release_year }})</h4>
+            <p><strong>Desenvolvedor:</strong> {{ getDeveloperName(game.developer) }}</p>
+            <p><strong>Gêneros:</strong> {{ getGenresNames(game.genre) }}</p>
+            <p><strong>Plataformas:</strong> {{ getConsolesNames(game.consoles) }}</p>
+            <p v-if="game.average_rating"><strong>Nota Média:</strong> ⭐ {{ game.average_rating }}</p>
+            <p class="game-desc">{{ game.description || 'Sem descrição.' }}</p>
+          </div>
+        </router-link>
+      </div>
+    </div>
+
+    <div v-if="showModal" class="modal-overlay" @click.self="showModal = false">
+      <div class="modal-content">
+        
+        <div class="modal-header">
+          <h3>Cadastrar Novo Jogo</h3>
+          <button class="close-btn" @click="showModal = false">✖</button>
+        </div>
+
         <form @submit.prevent="handleCreateGame" class="simple-form">
           <div class="form-group">
             <label for="title">Título do Jogo</label>
             <input v-model="formData.title" type="text" id="title" required />
           </div>
 
-          <div class="form-group">
-            <label for="release_year">Ano de Lançamento</label>
-            <input v-model="formData.release_year" type="number" id="release_year" required />
+          <div class="form-row">
+            <div class="form-group half-width">
+              <label for="release_year">Ano de Lançamento</label>
+              <input v-model="formData.release_year" type="number" id="release_year" required />
+            </div>
+            
+            <div class="form-group half-width">
+              <label for="developer">Desenvolvedor</label>
+              <select v-model="formData.developer" id="developer" required>
+                <option value="" disabled>Selecione...</option>
+                <option v-for="dev in developers" :key="dev.id" :value="dev.id">
+                  {{ dev.name }}
+                </option>
+              </select>
+            </div>
           </div>
 
           <div class="form-group">
             <label for="cover_image">Imagem de Capa</label>
-            <input @change="handleFileChange" type="file" id="cover_image" accept="image/*" />
+            <input @change="handleFileChange" type="file" id="cover_image" accept="image/*" class="file-input" />
           </div>
 
-          <div class="form-group">
-            <label for="developer">Desenvolvedor</label>
-            <select v-model="formData.developer" id="developer" required>
-              <option value="" disabled>Selecione um desenvolvedor</option>
-              <option v-for="dev in developers" :key="dev.id" :value="dev.id">
-                {{ dev.name }}
-              </option>
-            </select>
-          </div>
+          <div class="form-row">
+            <div class="form-group half-width">
+              <label for="consoles">Consoles <small>(Ctrl para vários)</small></label>
+              <select v-model="formData.consoles" id="consoles" multiple required class="multi-select">
+                <option v-for="c in consolesList" :key="c.id" :value="c.id">
+                  {{ c.name }}
+                </option>
+              </select>
+            </div>
 
-          <div class="form-group">
-            <label for="consoles">Consoles (Segure Ctrl para selecionar vários)</label>
-            <select v-model="formData.consoles" id="consoles" multiple required class="multi-select">
-              <option v-for="c in consolesList" :key="c.id" :value="c.id">
-                {{ c.name }} ({{ c.manufacturer }})
-              </option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="genre">Gêneros (Segure Ctrl para selecionar vários)</label>
-            <select v-model="formData.genre" id="genre" multiple required class="multi-select">
-              <option v-for="g in genres" :key="g.id" :value="g.id">
-                {{ g.name }}
-              </option>
-            </select>
+            <div class="form-group half-width">
+              <label for="genre">Gêneros <small>(Ctrl para vários)</small></label>
+              <select v-model="formData.genre" id="genre" multiple required class="multi-select">
+                <option v-for="g in genres" :key="g.id" :value="g.id">
+                  {{ g.name }}
+                </option>
+              </select>
+            </div>
           </div>
 
           <div class="form-group">
@@ -183,112 +220,68 @@ onMounted(() => {
           </div>
 
           <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
-          <p v-if="successMessage" class="success">{{ successMessage }}</p>
 
-          <button type="submit" class="btn">Salvar Jogo</button>
-        </form>
-      </div>
-
-      <div class="list-section">
-        <h3>Jogos no Catálogo</h3>
-        <p v-if="games.length === 0" class="no-data">Nenhum jogo cadastrado.</p>
-        
-        <div v-else class="games-grid">
-          
-          <router-link 
-            v-for="game in games" 
-            :key="game.id" 
-            :to="`/jogo/${game.id}`" 
-            class="game-card clickable-card"
-          >
-            <div class="card-image">
-              <img v-if="game.cover_image" :src="game.cover_image" alt="Capa do Jogo" />
-              <div v-else class="no-image">Sem Capa</div>
-            </div>
-            
-            <div class="card-details">
-              <h4>{{ game.title }} ({{ game.release_year }})</h4>
-              <p><strong>Desenvolvedor:</strong> {{ getDeveloperName(game.developer) }}</p>
-              <p><strong>Gêneros:</strong> {{ getGenresNames(game.genre) }}</p>
-              <p><strong>Plataformas:</strong> {{ getConsolesNames(game.consoles) }}</p>
-              <p v-if="game.average_rating"><strong>Nota Média:</strong> ⭐ {{ game.average_rating }}</p>
-              <p class="game-desc">{{ game.description || 'Sem descrição.' }}</p>
-            </div>
-          </router-link>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-cancel" @click="showModal = false">Cancelar</button>
+            <button type="submit" class="btn btn-save">Salvar Jogo</button>
           </div>
+        </form>
+
       </div>
     </div>
-  </div>
+    </div>
 </template>
 
 <style scoped>
-/* Mantivemos todo o CSS do seu amigo intacto e adicionamos as regras para o link */
-
 .game-container {
   padding: 20px;
   font-family: Arial, sans-serif;
 }
-.content-layout {
+
+/* Novo cabeçalho flexível */
+.header-row {
   display: flex;
-  gap: 40px;
-  margin-top: 20px;
-  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #eaeaea;
+  padding-bottom: 10px;
 }
-.form-section {
-  flex: 1;
-  min-width: 320px;
-  border: 1px solid #ccc;
-  padding: 20px;
-  border-radius: 6px;
-  background-color: #f9f9f9;
+
+.header-row h2 {
+  margin: 0;
+  color: #2c3e50;
 }
-.list-section {
-  flex: 2;
-  min-width: 450px;
-}
-.simple-form {
-  display: flex;
-  flex-direction: column;
-}
-.form-group {
-  margin-bottom: 12px;
-  display: flex;
-  flex-direction: column;
-}
-.form-group label {
-  margin-bottom: 4px;
-  font-weight: bold;
-}
-.form-group input, .form-group textarea, .form-group select {
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-.multi-select {
-  height: 100px;
-}
-.btn {
-  padding: 10px;
+
+.add-game-btn {
   background-color: #42b983;
   color: white;
   border: none;
-  border-radius: 4px;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-weight: bold;
   cursor: pointer;
-  font-size: 15px;
+  font-size: 14px;
+  transition: background-color 0.2s;
 }
-.btn:hover {
+
+.add-game-btn:hover {
   background-color: #3aa876;
 }
-.error { color: red; font-size: 14px; }
-.success { color: green; font-size: 14px; }
 
-/* Grid de Jogos (Cards) */
+/* A lista agora ocupa 100% */
+.list-section {
+  width: 100%;
+}
+
 .games-grid {
   display: grid;
+  /* Grade fluida: cards preenchem a tela lado a lado até acabar o espaço */
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 20px;
   margin-top: 15px;
 }
+
 .game-card {
   border: 1px solid #ddd;
   border-radius: 8px;
@@ -299,19 +292,17 @@ onMounted(() => {
   flex-direction: column;
 }
 
-/* --- NOVAS REGRAS PARA O CARD CLICÁVEL --- */
 .clickable-card {
-  text-decoration: none; /* Remove o sublinhado azul padrão de links */
-  color: inherit; /* Impede que o texto fique roxo/azul */
-  transition: transform 0.2s, box-shadow 0.2s; /* Efeito suave */
+  text-decoration: none; 
+  color: inherit; 
+  transition: transform 0.2s, box-shadow 0.2s; 
   cursor: pointer;
 }
 
 .clickable-card:hover {
-  transform: translateY(-5px); /* Faz o card "flutuar" um pouquinho ao passar o mouse */
-  box-shadow: 0 6px 12px rgba(0,0,0,0.15); /* Aumenta a sombra no hover */
+  transform: translateY(-5px); 
+  box-shadow: 0 6px 12px rgba(0,0,0,0.15); 
 }
-/* ----------------------------------------- */
 
 .card-image {
   height: 160px;
@@ -336,24 +327,95 @@ onMounted(() => {
   flex-direction: column;
   gap: 6px;
 }
-.card-details h4 {
+.card-details h4 { margin: 0; font-size: 18px; color: #2c3e50; }
+.card-details p { margin: 0; font-size: 14px; color: #555; }
+.game-desc { margin-top: 8px !important; font-style: italic; font-size: 13px !important; color: #777 !important; }
+.no-data { color: #666; font-style: italic; text-align: center; font-size: 18px; margin-top: 40px;}
+
+/* ========================================= */
+/* ESTILOS DO MODAL DE CADASTRO              */
+/* ========================================= */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.modal-content {
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 25px;
+  width: 100%;
+  max-width: 600px; /* Modal um pouco mais largo para acomodar os campos */
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+
+.modal-header h3 {
   margin: 0;
-  font-size: 18px;
   color: #2c3e50;
+  font-size: 20px;
 }
-.card-details p {
-  margin: 0;
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #999;
+}
+
+.close-btn:hover {
+  color: #333;
+}
+
+.simple-form { display: flex; flex-direction: column; }
+.form-group { margin-bottom: 15px; display: flex; flex-direction: column; }
+.form-row { display: flex; gap: 15px; }
+.half-width { flex: 1; }
+
+.form-group label { margin-bottom: 6px; font-weight: bold; font-size: 14px; color: #333; }
+.form-group input, .form-group textarea, .form-group select { 
+  padding: 10px; 
+  border: 1px solid #ccc; 
+  border-radius: 4px; 
   font-size: 14px;
-  color: #555;
 }
-.game-desc {
-  margin-top: 8px !important;
-  font-style: italic;
-  font-size: 13px !important;
-  color: #777 !important;
+.file-input { padding: 6px !important; }
+.multi-select { height: 100px; }
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+  border-top: 1px solid #eee;
+  padding-top: 20px;
 }
-.no-data {
-  color: #666;
-  font-style: italic;
-}
+
+.btn { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; font-weight: bold; }
+.btn-save { background-color: #42b983; color: white; }
+.btn-save:hover { background-color: #3aa876; }
+.btn-cancel { background-color: #f0f0f0; color: #555; }
+.btn-cancel:hover { background-color: #e4e4e4; }
+.error { color: #dc3545; font-size: 14px; margin-top: -5px; margin-bottom: 15px;}
 </style>

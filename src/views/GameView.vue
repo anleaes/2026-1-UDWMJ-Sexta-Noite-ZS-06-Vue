@@ -131,7 +131,6 @@ onMounted(() => {
     <h2>Catálogo de Jogos</h2>
 
     <div class="content-layout">
-      <!-- Formulário de Cadastro (Esquerda) -->
       <div class="form-section">
         <h3>Cadastrar Jogo</h3>
         <form @submit.prevent="handleCreateGame" class="simple-form">
@@ -150,7 +149,6 @@ onMounted(() => {
             <input @change="handleFileChange" type="file" id="cover_image" accept="image/*" />
           </div>
 
-          <!-- Seleção de Desenvolvedor (Chave Estrangeira Única) -->
           <div class="form-group">
             <label for="developer">Desenvolvedor</label>
             <select v-model="formData.developer" id="developer" required>
@@ -161,7 +159,6 @@ onMounted(() => {
             </select>
           </div>
 
-          <!-- Seleção Múltipla de Consoles (ManyToMany) -->
           <div class="form-group">
             <label for="consoles">Consoles (Segure Ctrl para selecionar vários)</label>
             <select v-model="formData.consoles" id="consoles" multiple required class="multi-select">
@@ -171,7 +168,6 @@ onMounted(() => {
             </select>
           </div>
 
-          <!-- Seleção Múltipla de Gêneros (ManyToMany) -->
           <div class="form-group">
             <label for="genre">Gêneros (Segure Ctrl para selecionar vários)</label>
             <select v-model="formData.genre" id="genre" multiple required class="multi-select">
@@ -193,15 +189,19 @@ onMounted(() => {
         </form>
       </div>
 
-      <!-- Grid de Jogos Cadastrados (Direita) -->
       <div class="list-section">
         <h3>Jogos no Catálogo</h3>
         <p v-if="games.length === 0" class="no-data">Nenhum jogo cadastrado.</p>
         
         <div v-else class="games-grid">
-          <div v-for="game in games" :key="game.id" class="game-card">
+          
+          <router-link 
+            v-for="game in games" 
+            :key="game.id" 
+            :to="`/jogo/${game.id}`" 
+            class="game-card clickable-card"
+          >
             <div class="card-image">
-              <!-- Exibe a capa do jogo se houver, senão mostra um placeholder simples -->
               <img v-if="game.cover_image" :src="game.cover_image" alt="Capa do Jogo" />
               <div v-else class="no-image">Sem Capa</div>
             </div>
@@ -214,14 +214,16 @@ onMounted(() => {
               <p v-if="game.average_rating"><strong>Nota Média:</strong> ⭐ {{ game.average_rating }}</p>
               <p class="game-desc">{{ game.description || 'Sem descrição.' }}</p>
             </div>
+          </router-link>
           </div>
-        </div>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
+/* Mantivemos todo o CSS do seu amigo intacto e adicionamos as regras para o link */
+
 .game-container {
   padding: 20px;
   font-family: Arial, sans-serif;
@@ -296,6 +298,21 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
 }
+
+/* --- NOVAS REGRAS PARA O CARD CLICÁVEL --- */
+.clickable-card {
+  text-decoration: none; /* Remove o sublinhado azul padrão de links */
+  color: inherit; /* Impede que o texto fique roxo/azul */
+  transition: transform 0.2s, box-shadow 0.2s; /* Efeito suave */
+  cursor: pointer;
+}
+
+.clickable-card:hover {
+  transform: translateY(-5px); /* Faz o card "flutuar" um pouquinho ao passar o mouse */
+  box-shadow: 0 6px 12px rgba(0,0,0,0.15); /* Aumenta a sombra no hover */
+}
+/* ----------------------------------------- */
+
 .card-image {
   height: 160px;
   background-color: #eaeaea;

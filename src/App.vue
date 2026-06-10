@@ -16,10 +16,6 @@ async function handleLogout() {
     <div class="logo">Catálogo de Jogos</div>
     <nav class="nav-links">
       <RouterLink to="/" class="nav-item">Início</RouterLink>
-      <RouterLink to="/desenvolvedores" class="nav-item">Desenvolvedores</RouterLink>
-      <RouterLink to="/consoles" class="nav-item">Consoles</RouterLink>
-      <RouterLink to="/generos" class="nav-item">Gêneros</RouterLink>
-      <RouterLink to="/reviews" class="nav-item">Avaliações</RouterLink>
       <RouterLink to="/tags" class="nav-item">Tags</RouterLink>
       <RouterLink to="/perfil" class="nav-item">Meu Perfil</RouterLink>
       <button @click="handleLogout" class="btn-logout">Sair</button>

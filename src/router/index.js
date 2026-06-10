@@ -10,14 +10,12 @@ const router = createRouter({
       component: () => import('../views/GameView.vue'),
       meta: { requiresAuth: true }
     },
-    
     {
       path: '/jogo/:id',
       name: 'game-detail',
       component: () => import('../views/GameDetailView.vue'),
       meta: { requiresAuth: true }
     },
-    // ------------------------------------
     {
       path: '/login',
       name: 'login',
@@ -29,30 +27,6 @@ const router = createRouter({
       component: () => import('../views/CadastroView.vue')
     },
     {
-      path: '/desenvolvedores',
-      name: 'desenvolvedores',
-      component: () => import('../views/DeveloperView.vue'),
-      meta: { requiresAuth: true }
-    },
-    {
-      path: '/consoles',
-      name: 'consoles',
-      component: () => import('../views/ConsoleView.vue'),
-      meta: { requiresAuth: true }
-    },
-    {
-      path: '/generos',
-      name: 'generos',
-      component: () => import('../views/GenreView.vue'),
-      meta: { requiresAuth: true }
-    },
-    {
-      path: '/reviews',
-      name: 'reviews',
-      component: () => import('../views/ReviewView.vue'),
-      meta: { requiresAuth: true }
-    },
-    {
       path: '/perfil',
       name: 'perfil',
       component: () => import('../views/ProfileView.vue'),
@@ -61,7 +35,7 @@ const router = createRouter({
     {
       path: '/tags',
       name: 'tags',
-      component: () => import('../views/TagView.vue'),
+      component: () => import('../views/TagView.vue'), // Certifique-se que o arquivo na pasta views se chama TagView.vue
       meta: { requiresAuth: true }
     }
   ]

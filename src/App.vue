@@ -19,6 +19,7 @@ async function handleLogout() {
       <RouterLink to="/tags" class="nav-item">Tags</RouterLink>
       <RouterLink to="/perfil" class="nav-item">Meu Perfil</RouterLink>
       <button @click="handleLogout" class="btn-logout">Sair</button>
+      <RouterLink to="/cadastro" class="nav-item">Criar Conta</RouterLink>
     </nav>
   </header>
 

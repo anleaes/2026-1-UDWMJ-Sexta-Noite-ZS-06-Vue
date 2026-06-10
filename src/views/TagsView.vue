@@ -1,11 +1,11 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import api from '../services/api';
+import { useAuthStore } from '../stores/auth'; // Importado para verificar se é Admin
+
+const authStore = useAuthStore();
 
 const tags = ref([]);
-const gameTags = ref([]);
-const games = ref([]);
-
 const errorMessage = ref('');
 const successMessage = ref('');
 
@@ -15,263 +15,250 @@ const tagForm = ref({
   category: ''
 });
 
-// Form do vinculo da Tag com o Jogo (GameTag)
-const gameTagForm = ref({
-  game: '',
-  tag: '',
-  is_primary: false,
-  is_spoiler: false
-});
-
-// Carrega todos os dados do backend
-async function loadData() {
+// Carrega apenas as Tags base
+async function loadTags() {
   try {
-    const [tagsRes, gameTagsRes, gamesRes] = await Promise.all([
-      api.get('/tag/tag/'),
-      api.get('/tag/gametag/'),
-      api.get('/jogos/')
-    ]);
-
-    tags.value = tagsRes.data;
-    gameTags.value = gameTagsRes.data;
-    games.value = gamesRes.data;
+    const response = await api.get('/tag/tag/');
+    tags.value = response.data;
   } catch (error) {
     console.error('Erro ao buscar tags:', error);
-    errorMessage.value = 'Erro ao carregar as informações das marcadores.';
+    errorMessage.value = 'Erro ao carregar os marcadores.';
   }
 }
 
-// Cria uma nova Tag
+// Cria uma nova Tag (Protegido)
 async function handleCreateTag() {
   errorMessage.value = '';
   successMessage.value = '';
+  
   try {
     await api.post('/tag/tag/', tagForm.value);
     successMessage.value = 'Tag criada com sucesso!';
-    tagForm.value = { name: '', category: '' };
-    loadData();
+    tagForm.value = { name: '', category: '' }; // Limpa o formulário
+    loadTags(); // Recarrega a lista
   } catch (error) {
     console.error('Erro ao cadastrar tag:', error);
-    errorMessage.value = 'Erro ao cadastrar nova tag.';
+    // Se o Django barrar por falta de permissão (Erro 403)
+    if (error.response && (error.response.status === 403 || error.response.status === 401)) {
+      errorMessage.value = 'Acesso Negado: Apenas administradores podem criar tags.';
+    } else {
+      errorMessage.value = 'Erro ao cadastrar nova tag. Verifique os dados.';
+    }
   }
-}
-
-// Vincula a Tag ao Jogo (Cria uma GameTag)
-async function handleLinkGameTag() {
-  errorMessage.value = '';
-  successMessage.value = '';
-  try {
-    await api.post('/tag/gametag/', gameTagForm.value);
-    successMessage.value = 'Tag associada ao jogo com sucesso!';
-    gameTagForm.value = { game: '', tag: '', is_primary: false, is_spoiler: false };
-    loadData();
-  } catch (error) {
-    console.error('Erro ao vincular tag ao jogo:', error);
-    errorMessage.value = 'Erro ao associar marcador ao jogo.';
-  }
-}
-
-// Auxiliares para formatação de listagem
-function getGameTitle(id) {
-  const game = games.value.find(g => g.id === id);
-  return game ? game.title : '-';
-}
-
-function getTagName(id) {
-  const tag = tags.value.find(t => t.id === id);
-  return tag ? tag.name : '-';
 }
 
 onMounted(() => {
-  loadData();
+  loadTags();
 });
 </script>
 
 <template>
   <div class="tag-container">
-    <h2>Gerenciar Marcadores (Tags)</h2>
+    <div class="header-titles">
+      <h2>Marcadores da Comunidade (Tags)</h2>
+      <p class="subtitle">Explore as tags disponíveis para categorizar os jogos.</p>
+    </div>
 
-    <div class="content-layout">
-      <!-- Formulários (Esquerda) -->
-      <div class="forms-column">
-        <!-- FORM 1: Criar Tag Global -->
-        <div class="form-section">
-          <h3>Cadastrar Nova Tag</h3>
-          <form @submit.prevent="handleCreateTag" class="simple-form">
-            <div class="form-group">
-              <label for="tag-name">Nome da Tag</label>
-              <input v-model="tagForm.name" type="text" id="tag-name" placeholder="Ex: Terror, Indie" required />
-            </div>
-            
-            <div class="form-group">
-              <label for="tag-category">Categoria</label>
-              <input v-model="tagForm.category" type="text" id="tag-category" placeholder="Ex: Gênero, Mecânica" required />
-            </div>
+    <div v-if="authStore.user?.is_superuser" class="admin-section">
+      <div class="form-section">
+        <h3>+ Criar Nova Tag</h3>
+        <form @submit.prevent="handleCreateTag" class="simple-form form-row">
+          
+          <div class="form-group half-width">
+            <label for="tag-name">Nome da Tag</label>
+            <input v-model="tagForm.name" type="text" id="tag-name" placeholder="Ex: Mundo Aberto, Terror" required />
+          </div>
+          
+          <div class="form-group half-width">
+            <label for="tag-category">Categoria (Opcional)</label>
+            <input v-model="tagForm.category" type="text" id="tag-category" placeholder="Ex: Gênero, Mecânica" />
+          </div>
 
+          <div class="btn-container">
             <button type="submit" class="btn">Salvar Tag</button>
-          </form>
-        </div>
-
-        <!-- FORM 2: Associar Tag ao Jogo (GameTag) -->
-        <div class="form-section">
-          <h3>Associar Tag a um Jogo</h3>
-          <form @submit.prevent="handleLinkGameTag" class="simple-form">
-            <div class="form-group">
-              <label for="game-select">Jogo</label>
-              <select v-model="gameTagForm.game" id="game-select" required>
-                <option value="" disabled>Selecione um jogo</option>
-                <option v-for="g in games" :key="g.id" :value="g.id">{{ g.title }}</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label for="tag-select">Tag</label>
-              <select v-model="gameTagForm.tag" id="tag-select" required>
-                <option value="" disabled>Selecione uma tag</option>
-                <option v-for="t in tags" :key="t.id" :value="t.id">{{ t.name }} ({{ t.category }})</option>
-              </select>
-            </div>
-
-            <div class="form-group checkbox-group">
-              <input v-model="gameTagForm.is_primary" type="checkbox" id="is_primary" />
-              <label for="is_primary">Tag Principal</label>
-            </div>
-
-            <div class="form-group checkbox-group">
-              <input v-model="gameTagForm.is_spoiler" type="checkbox" id="is_spoiler" />
-              <label for="is_spoiler">Contém Spoiler</label>
-            </div>
-
-            <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
-            <p v-if="successMessage" class="success">{{ successMessage }}</p>
-
-            <button type="submit" class="btn">Associar Marcador</button>
-          </form>
-        </div>
-      </div>
-
-      <!-- Tabela de Listagem de Associações (Direita) -->
-      <div class="list-section">
-        <h3>Lista de Associações (GameTags)</h3>
-        <p v-if="gameTags.length === 0" class="no-data">Nenhuma associação de tag realizada.</p>
+          </div>
+        </form>
         
-        <table v-else class="simple-table">
-          <thead>
-            <tr>
-              <th>Jogo</th>
-              <th>Marcador (Tag)</th>
-              <th>Principal?</th>
-              <th>Spoiler?</th>
-              <th>Votos</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="gt in gameTags" :key="gt.id">
-              <td><strong>{{ getGameTitle(gt.game) }}</strong></td>
-              <td><span class="tag-badge">{{ getTagName(gt.tag) }}</span></td>
-              <td>{{ gt.is_primary ? 'Sim ⭐' : 'Não' }}</td>
-              <td>{{ gt.is_spoiler ? '⚠️ Spoiler' : 'Não' }}</td>
-              <td>👍 {{ gt.upvotes }}</td>
-            </tr>
-          </tbody>
-        </table>
+        <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
+        <p v-if="successMessage" class="success">{{ successMessage }}</p>
       </div>
     </div>
+
+    <div v-else class="user-notice">
+      <p>⚠️ Apenas administradores do sistema podem criar novas tags. Se sentir falta de alguma, entre em contato com o suporte.</p>
+    </div>
+
+    <div class="list-section">
+      <h3 class="list-title">Tags Existentes</h3>
+      
+      <div v-if="tags.length === 0" class="no-data">
+        <p>Nenhuma tag foi criada no sistema ainda.</p>
+      </div>
+      
+      <div v-else class="tags-grid">
+        <div v-for="tag in tags" :key="tag.id" class="tag-card">
+          <span class="tag-name">{{ tag.name }}</span>
+          <span v-if="tag.category" class="tag-category">{{ tag.category }}</span>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
 <style scoped>
 .tag-container {
+  max-width: 900px;
+  margin: 0 auto;
   padding: 20px;
   font-family: Arial, sans-serif;
 }
-.content-layout {
-  display: flex;
-  gap: 40px;
-  margin-top: 20px;
-  flex-wrap: wrap;
+
+.header-titles {
+  text-align: center;
+  margin-bottom: 30px;
 }
-.forms-column {
-  flex: 1;
-  min-width: 320px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+
+.header-titles h2 {
+  margin: 0 0 5px 0;
+  color: #2c3e50;
+  font-size: 28px;
 }
+
+.subtitle {
+  margin: 0;
+  color: #666;
+}
+
+/* Área do Administrador */
+.admin-section {
+  margin-bottom: 30px;
+}
+
 .form-section {
-  border: 1px solid #ccc;
+  border: 1px solid #cce5ff;
   padding: 20px;
-  border-radius: 6px;
-  background-color: #f9f9f9;
+  border-radius: 8px;
+  background-color: #f8fbff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
-.list-section {
-  flex: 2;
-  min-width: 400px;
+
+.form-section h3 {
+  margin-top: 0;
+  color: #0056b3;
+  border-bottom: 2px solid #e6f2ff;
+  padding-bottom: 10px;
 }
+
 .simple-form {
   display: flex;
-  flex-direction: column;
+  gap: 15px;
+  align-items: flex-end;
 }
+
+.form-row {
+  flex-wrap: wrap;
+}
+
 .form-group {
-  margin-bottom: 12px;
   display: flex;
   flex-direction: column;
 }
-.form-group label {
-  margin-bottom: 4px;
-  font-weight: bold;
+
+.half-width {
+  flex: 1;
+  min-width: 200px;
 }
-.form-group input, .form-group select {
-  padding: 8px;
+
+.form-group label {
+  margin-bottom: 6px;
+  font-weight: bold;
+  font-size: 14px;
+  color: #333;
+}
+
+.form-group input {
+  padding: 10px;
   border: 1px solid #ccc;
   border-radius: 4px;
+  font-size: 14px;
 }
-.checkbox-group {
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
+
+.btn-container {
+  margin-bottom: 2px; /* Alinha o botão com os inputs */
 }
-.checkbox-group label {
-  margin-bottom: 0;
-}
+
 .btn {
-  padding: 10px;
+  padding: 11px 20px;
   background-color: #42b983;
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  font-weight: bold;
 }
+
 .btn:hover {
   background-color: #3aa876;
 }
-.error { color: red; font-size: 14px; }
-.success { color: green; font-size: 14px; }
 
-/* Tabela */
-.simple-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 10px;
+/* Aviso para usuários comuns */
+.user-notice {
+  background-color: #fff3cd;
+  color: #856404;
+  padding: 15px;
+  border-radius: 6px;
+  border: 1px solid #ffeeba;
+  text-align: center;
+  margin-bottom: 30px;
+  font-size: 14px;
 }
-.simple-table th, .simple-table td {
-  border: 1px solid #ddd;
-  padding: 10px;
-  text-align: left;
+
+/* Listagem de Tags */
+.list-section {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px solid #eaeaea;
 }
-.simple-table th {
-  background-color: #f2f2f2;
+
+.list-title {
+  margin-top: 0;
+  color: #333;
+  margin-bottom: 15px;
 }
-.tag-badge {
-  background-color: #e0f2f1;
-  color: #004d40;
-  padding: 4px 8px;
-  border-radius: 12px;
+
+.tags-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.tag-card {
+  display: flex;
+  flex-direction: column;
+  background-color: #e9ecef;
+  border: 1px solid #ced4da;
+  padding: 10px 15px;
+  border-radius: 6px;
+  min-width: 120px;
+}
+
+.tag-name {
   font-weight: bold;
-  font-size: 13px;
+  color: #212529;
+  font-size: 15px;
 }
-.no-data {
-  color: #666;
-  font-style: italic;
+
+.tag-category {
+  font-size: 12px;
+  color: #6c757d;
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
+
+.error { color: #dc3545; font-size: 14px; margin-top: 15px; }
+.success { color: #28a745; font-size: 14px; margin-top: 15px; }
+.no-data { color: #666; font-style: italic; }
 </style>

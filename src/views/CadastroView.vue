@@ -32,7 +32,6 @@ async function handleCadastro() {
   }
 
   try {
-    // Montamos o pacote base com o que veio do formulário
     const payload = {
       first_name: formData.value.first_name,
       last_name: formData.value.last_name,
@@ -42,14 +41,17 @@ async function handleCadastro() {
       password: formData.value.password,
     };
 
-    // Se for administrador, mandamos o "aviso" pro Django
+    // Manda as flags pro Django (ele decide como usar lá no AdminViewSet)
     if (accountType.value === 'admin') {
       payload.is_superuser = true;
       payload.is_staff = true;
     }
 
-    // Dispara para o backend
-    await api.post('/usuarios/', payload);
+    // A MÁGICA ACONTECE AQUI: Define a rota dinamicamente
+    const endpoint = accountType.value === 'admin' ? '/administradores/' : '/usuarios/';
+    
+    // Dispara a requisição para a rota correta
+    await api.post(endpoint, payload);
     
     successMessage.value = `${accountType.value === 'admin' ? 'Administrador' : 'Usuário'} cadastrado com sucesso! Redirecionando...`;
     

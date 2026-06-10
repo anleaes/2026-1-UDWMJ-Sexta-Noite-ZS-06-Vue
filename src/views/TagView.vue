@@ -49,6 +49,7 @@ async function handleCreateTag() {
 
 onMounted(() => {
   loadTags();
+  console.log("Usuário logado no Vue:", authStore.user);
 });
 </script>
 
@@ -59,7 +60,7 @@ onMounted(() => {
       <p class="subtitle">Explore as tags disponíveis para categorizar os jogos.</p>
     </div>
 
-    <div v-if="authStore.user?.is_superuser" class="admin-section">
+    <div v-if="authStore.user?.is_admin" class="admin-section">
       <div class="form-section">
         <h3>+ Criar Nova Tag</h3>
         <form @submit.prevent="handleCreateTag" class="simple-form form-row">

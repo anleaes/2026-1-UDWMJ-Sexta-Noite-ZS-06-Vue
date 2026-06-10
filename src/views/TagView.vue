@@ -15,10 +15,10 @@ const tagForm = ref({
   category: ''
 });
 
-// Carrega apenas as Tags base
+// Carrega as Tags usando a rota correta do ecossistema
 async function loadTags() {
   try {
-    const response = await api.get('/tag/tag/');
+    const response = await api.get('/tag/categoria/');
     tags.value = response.data;
   } catch (error) {
     console.error('Erro ao buscar tags:', error);
@@ -32,23 +32,32 @@ async function handleCreateTag() {
   successMessage.value = '';
   
   try {
-    await api.post('/tag/tag/', tagForm.value);
+    // Montamos o pacote exatamente com os nomes que o modelo do Django exige
+    const payload = {
+      name: tagForm.value.name,
+      category: tagForm.value.category,
+      created_by: authStore.user.id  // Injetamos o ID do admin que está logado agora
+    };
+
+    // Enviamos o pacote completo para a rota correta
+    await api.post('/tag/categoria/', payload);
+    
     successMessage.value = 'Tag criada com sucesso!';
-    tagForm.value = { name: '', category: '' }; // Limpa o formulário
-    loadTags(); // Recarrega a lista
+    // Limpa o formulário e recarrega a lista
+    tagForm.value = { name: '', category: '' }; 
+    loadTags();
+
   } catch (error) {
-    console.error('Erro ao cadastrar tag:', error);
-    // Se o Django barrar por falta de permissão (Erro 403)
-    if (error.response && (error.response.status === 403 || error.response.status === 401)) {
-      errorMessage.value = 'Acesso Negado: Apenas administradores podem criar tags.';
-    } else {
-      errorMessage.value = 'Erro ao cadastrar nova tag. Verifique os dados.';
-    }
+    console.error(error);
+    errorMessage.value = error.response?.data 
+      ? JSON.stringify(error.response.data) 
+      : 'Erro ao criar a tag.';
   }
 }
 
 onMounted(() => {
   loadTags();
+  console.log("Usuário logado no Vue:", authStore.user);
 });
 </script>
 
@@ -59,7 +68,7 @@ onMounted(() => {
       <p class="subtitle">Explore as tags disponíveis para categorizar os jogos.</p>
     </div>
 
-    <div v-if="authStore.user?.is_superuser" class="admin-section">
+    <div v-if="authStore.user?.is_admin" class="admin-section">
       <div class="form-section">
         <h3>+ Criar Nova Tag</h3>
         <form @submit.prevent="handleCreateTag" class="simple-form form-row">
@@ -70,8 +79,8 @@ onMounted(() => {
           </div>
           
           <div class="form-group half-width">
-            <label for="tag-category">Categoria (Opcional)</label>
-            <input v-model="tagForm.category" type="text" id="tag-category" placeholder="Ex: Gênero, Mecânica" />
+            <label for="tag-category">Categoria</label>
+            <input v-model="tagForm.category" type="text" id="tag-category" placeholder="Ex: Gênero, Mecânica" required />
           </div>
 
           <div class="btn-container">

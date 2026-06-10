@@ -9,9 +9,8 @@ export const useAuthStore = defineStore('auth', () => {
   // Nova função para buscar os dados de quem está logado
   async function fetchUser() {
     try {
-      // ATENÇÃO: Substitua '/usuarios/me/' pela rota correta da sua API 
-      // que devolve os dados do usuário atualmente logado!
-      const response = await api.get('/usuarios/me/'); 
+      
+      const response = await api.get('/api/me/'); 
       user.value = response.data;
     } catch (error) {
       console.error('Erro ao buscar dados do usuário:', error);

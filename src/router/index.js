@@ -10,6 +10,14 @@ const router = createRouter({
       component: () => import('../views/GameView.vue'),
       meta: { requiresAuth: true }
     },
+    
+    {
+      path: '/jogo/:id',
+      name: 'game-detail',
+      component: () => import('../views/GameDetailView.vue'),
+      meta: { requiresAuth: true }
+    },
+    // ------------------------------------
     {
       path: '/login',
       name: 'login',

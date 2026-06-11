@@ -34,7 +34,7 @@ export const useAuthStore = defineStore('auth', () => {
 
       isAuthenticated.value = true;
       
-      // AGORA SIM: Após logar, buscamos quem é a pessoa!
+      // Após logar, busca quem é a pessoa
       await fetchUser();
 
       return { success: true };

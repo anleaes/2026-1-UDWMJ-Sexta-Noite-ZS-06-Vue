@@ -9,10 +9,10 @@ const successMessage = ref('');
 
 // Dados do formulário
 const formData = ref({
-  game: '',          // ID do jogo avaliado
-  rating: '',        // Nota (Float)
-  recommended: true, // Booleano
-  comment: ''        // Texto
+  game: '',          
+  rating: '',        
+  recommended: true, 
+  comment: ''        
 });
 
 // Carrega os jogos disponíveis e as avaliações já feitas
@@ -35,7 +35,6 @@ async function handleCreateReview() {
   errorMessage.value = '';
   successMessage.value = '';
   try {
-    // Note que não enviamos o 'user', pois o Django o associará de forma segura no backend
     await api.post('/review/', formData.value);
     successMessage.value = 'Sua avaliação foi enviada!';
     

@@ -32,11 +32,10 @@ async function handleCreateTag() {
   successMessage.value = '';
   
   try {
-    // Montamos o pacote exatamente com os nomes que o modelo do Django exige
     const payload = {
       name: tagForm.value.name,
       category: tagForm.value.category,
-      created_by: authStore.user.id  // Injetamos o ID do admin que está logado agora
+      created_by: authStore.user.id  // ID do admin que está logado agora
     };
 
     // Enviamos o pacote completo para a rota correta
@@ -194,7 +193,7 @@ onMounted(() => {
 }
 
 .btn-container {
-  margin-bottom: 2px; /* Alinha o botão com os inputs */
+  margin-bottom: 2px; 
 }
 
 .btn {

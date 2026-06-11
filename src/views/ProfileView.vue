@@ -70,7 +70,7 @@ async function handleCreateProfile() {
   }
 }
 
-// Atualiza o perfil existente (PATCH)
+// Atualiza o perfil existente 
 async function handleUpdateProfile() {
   errorMessage.value = '';
   successMessage.value = '';
@@ -83,7 +83,6 @@ async function handleUpdateProfile() {
       payload.append('avatar', selectedAvatar.value);
     }
 
-    // Faz um PATCH enviando apenas os campos alterados para o ID do perfil
     await api.patch(`/perfil/${profile.value.id}/`, payload, {
       headers: {
         'Content-Type': 'multipart/form-data'
